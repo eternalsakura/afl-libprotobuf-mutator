@@ -1,62 +1,56 @@
+// See README.txt for information and build instructions.
+//
+// Note: START and END tags are used in comments to define sections used in
+// tutorials.  They are not part of the syntax for Protocol Buffers.
+//
+// To get an in-depth walkthrough of this file and the related examples, see:
+// https://developers.google.com/protocol-buffers/docs/tutorials
+
+// [START declaration]
 syntax = "proto2";
+package menuctf;
 
-message Literal5 {
+// [END declaration]
 
-  enum Literal { L31 = 49; };
-  required Literal literal = 1;
+// [START messages]
+message AllocChoice {
+  required int32 choice_id = 1 [default=1];
+  required int32 size = 2;
+  required string content = 3;
 }
 
-message Optional4 { optional Literal5 child = 1; }
-
-message OneOrMore3 {
-
-  required Optional4 one = 1;
-  required Optional4 more = 2;
+message UpdateChoice {
+  required int32 choice_id = 1 [default=2];
+  required int32 idx = 2;
+  required int32 size = 3;
+  required string content = 4;
 }
 
-message Optional2 { optional OneOrMore3 child = 1; }
-
-message Literal7 {
-
-  enum Literal { L30 = 48; };
-  required Literal literal = 1;
+message DeleteChoice {
+  required int32 choice_id = 1 [default=3];
+  required int32 idx = 2;
 }
 
-message Literal9 {
-
-  enum Literal { L30 = 48; };
-  required Literal literal = 1;
+message ViewChoice {
+  required int32 choice_id = 1 [default=4];
+  required int32 idx = 2;
 }
 
-message RESet11 {
-  enum Set {
-    L30 = 48;
-    L31 = 49;
-  };
-  required Set set = 1;
+message ExitChoice {
+  required int32 choice_id = 1 [default=5];
 }
 
-message Star10 { repeated RESet11 child = 1; }
-
-message Then8 {
-  required Literal9 literal9 = 1;
-  required Star10 star10 = 2;
+// Our address book file is just one of these.
+message ChoiceList {
+  message Choice {
+    oneof the_choice{
+      AllocChoice alloc_choice = 1;
+      UpdateChoice update_choice = 2;
+      DeleteChoice delete_choice = 3;
+      ViewChoice view_choice = 4;
+      ExitChoice exit_choice = 5;
+    }
+  }
+  repeated Choice choice = 1;
 }
-
-message Or6 {
-  oneof T {
-    Literal7 literal7 = 1;
-    Then8 then8 = 2;
-  };
-}
-
-message Then1 {
-  required Optional2 optional2 = 1;
-  required Or6 or6 = 2;
-}
-
-message RootHelper {
-  oneof T { Then1 then1 = 1; };
-}
-
-message Root { repeated RootHelper rh = 1; }
+// [END messages]
