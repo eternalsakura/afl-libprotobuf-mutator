@@ -26,18 +26,41 @@ void ProtoToDataHelper(std::stringstream &out, const google::protobuf::Message &
   for (unsigned i = 0; i < fields; ++i) {
     const google::protobuf::FieldDescriptor *field = desc->field(i);
 
-    // 对于单个 choice
+    // 只有当 Message 类型为 ChoiceList 和 Choice 时，该条件判断才能成立
+    // 因为只有上述这两种类型的 field 才会是 Message 类型
     if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE) {
-      // 如果当前是 choice list
+      // 如果此时的 field 类型就是 repeated Choice, 那么就说明当前 msg 是 ChoiceList 类型
       if (field->is_repeated()) {
+        // 此时去 repeated Choice 类型的 field(可以把这个 field 理解成数组)中，遍历并取出每个 Choice 类型，之后将其输出
         const google::protobuf::RepeatedFieldRef<google::protobuf::Message> &ptr = refl->GetRepeatedFieldRef<google::protobuf::Message>(msg, field);
         // 将每个 choice 打出来
         for (const auto &child : ptr) {
           ProtoToDataHelper(out, child);
           out << "\n";
         }
-      // 如果当前是某个子 choice
-      } else if (refl->HasField(msg, field)) {
+      }
+      /* 注意这里的 else，如果不是 ChoiceList 类型，那么此时就是 Choice 类型
+         而对于 Choice 来说，其类型在 ××定义×× 时有五个 field
+         但是，由于 oneof 的限制，实际代码运行的情况下，只会有其中一个 field
+         对于 Choice 类型来说，能遍历到的 field 为：
+         
+         Message Choice {
+            AllocChoice alloc_choice
+            UpdateChoice update_choice
+            DeleteChoice delete_choice
+            ViewChoice view_choice
+            ExitChoice exit_choice
+         }
+
+         但是当代码执行到这里时，msg 参数中的 field 就只会有一个，例如 
+         msg {
+             DeleteChoice
+         }
+         也就是说，从 msg.desc 中取出来的 field（即用于遍历的 Field), 是会大于 msg 中实际保存的 field
+         因此需要额外加一个 HasField 判断，用于说明当前 msg（Choice类型） 里存放的确实是 DeleteChoice
+         这样就可以在下面的 if 分支内部，单独将这个 DeleteChoice 取出来，并进行操作
+      */
+      else if (refl->HasField(msg, field)) {
         // 获取到某一个 choice 的 message
         const google::protobuf::Message &child = refl->GetMessage(msg, field);
         
